@@ -1,7 +1,13 @@
 # Node.js & npm Lab — CLI Calculator
 
-## Note:
-Follow calculator.js file to implement the lab.
+> **Note:**
+> Please follow the `calculator.js` file to implement the TODOs.
+>
+> Please use app.jsx file to perform TODOs and follow the steps strictly to gain good marks in the assignment.  
+>  
+> **Due Date:** 1 April, 2026, **20:59 PM**
+
+---
 
 ## Overview
 This lab introduces students to **Node.js** and **npm** — the core tools for building JavaScript applications outside the browser.  

@@ -9,7 +9,7 @@ LAB SETUP INSTRUCTIONS
 
 1. Navigate to the project root folder (if you are not in root directory):
    Open your terminal and run:
-      cd 6-1-node-npm-Dromarjh-main
+      cd 6-2-node-npm
 
 2. Initialize npm project (if not already done):
    Run:
