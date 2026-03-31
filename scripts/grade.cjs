@@ -6,10 +6,10 @@
  * Grades ONLY based on the lab's TODOs / setup items:
  *  - calculator.js
  *  - utils/parser.js
- *  - utils/operation.js
+ *  - utils/operation.js (or utils/operations.js)
  *
  * Marking:
- * - 80 marks for lab TODOs / structure (top-level checks only)
+ * - 80 marks for lab TODOs / structure
  * - 20 marks for submission timing
  *   - On/before deadline => 20/20
  *   - After deadline     => 10/20
@@ -27,9 +27,12 @@
  *
  * Notes:
  * - Ignores JS comments (starter TODO comments do NOT count).
- * - Very lenient checks: looks for key constructs, not exact code.
- * - Only checks top-level implementation details, not deep correctness.
- * - Folder creation and file creation are included in grading.
+ * - Checks are still lenient, but now verify top-level implementation logic too.
+ * - calculator.js existence is NOT part of the "creation" marks.
+ * - Folder/file creation grading only applies to:
+ *      utils/
+ *      utils/parser.js
+ *      utils/operation.js OR utils/operations.js
  * - npm install / lodash installation is NOT graded.
  * - Manual testing commands are NOT graded.
  * - Accepts either:
@@ -61,14 +64,14 @@ const SUBMISSION_LATE = 10;
    TODO marks (out of 80)
 -------------------------------- */
 const tasks = [
-  { id: "t1", name: "TODO 1: Create required top-level structure (calculator.js, utils/, parser, operation file)", marks: 10 },
+  { id: "t1", name: "TODO 1: Create required utils structure (utils/, parser, operation file)", marks: 5 },
   { id: "t2", name: "TODO 2: Import required modules in calculator.js", marks: 10 },
   { id: "t3", name: "TODO 3: Parse command line arguments in calculator.js", marks: 10 },
-  { id: "t4", name: "TODO 4: Validate input and calculate result in calculator.js", marks: 10 },
-  { id: "t5", name: "TODO 5: Create add() and subtract() in utils/operation(s).js", marks: 10 },
-  { id: "t6", name: "TODO 6: Create multiply() and divide() in utils/operation(s).js", marks: 10 },
-  { id: "t7", name: "TODO 7: Use lodash and create parseNumbers() in utils/parser.js", marks: 10 },
-  { id: "t8", name: "TODO 8: Create isValidOperation() in utils/parser.js", marks: 10 },
+  { id: "t4", name: "TODO 4: Validate input and calculate result in calculator.js", marks: 15 },
+  { id: "t5", name: "TODO 5: Implement add() and subtract() in utils/operation(s).js", marks: 10 },
+  { id: "t6", name: "TODO 6: Implement multiply() and divide() in utils/operation(s).js", marks: 10 },
+  { id: "t7", name: "TODO 7: Implement parseNumbers() using lodash in utils/parser.js", marks: 10 },
+  { id: "t8", name: "TODO 8: Implement isValidOperation() using lodash in utils/parser.js", marks: 10 },
 ];
 
 const STEPS_MAX = tasks.reduce((sum, t) => sum + t.marks, 0); // 80
@@ -204,6 +207,50 @@ function existsDir(p) {
   }
 }
 
+function bodyOfFunction(code, functionName) {
+  if (!code) return null;
+
+  const patterns = [
+    new RegExp(`export\\s+function\\s+${functionName}\\s*\\([^)]*\\)\\s*\\{`, "i"),
+    new RegExp(`function\\s+${functionName}\\s*\\([^)]*\\)\\s*\\{`, "i"),
+    new RegExp(`export\\s+const\\s+${functionName}\\s*=\\s*\\([^)]*\\)\\s*=>\\s*\\{`, "i"),
+    new RegExp(`const\\s+${functionName}\\s*=\\s*\\([^)]*\\)\\s*=>\\s*\\{`, "i"),
+  ];
+
+  let match = null;
+  for (const p of patterns) {
+    match = p.exec(code);
+    if (match) break;
+  }
+  if (!match) return null;
+
+  const start = match.index + match[0].length;
+  let depth = 1;
+  let i = start;
+
+  while (i < code.length) {
+    const ch = code[i];
+
+    if (ch === "{") depth++;
+    else if (ch === "}") depth--;
+
+    if (depth === 0) {
+      return code.slice(start, i);
+    }
+    i++;
+  }
+
+  return null;
+}
+
+function hasAll(text, patterns) {
+  return patterns.every((p) => p.test(text));
+}
+
+function hasAny(text, patterns) {
+  return patterns.some((p) => p.test(text));
+}
+
 /* -----------------------------
    Project root detection
 -------------------------------- */
@@ -322,27 +369,27 @@ function failTask(task, reason) {
   });
 }
 
-function mkHas(code) {
-  return (re) => re.test(code);
-}
+/* -----------------------------
+   Function bodies for deeper checks
+-------------------------------- */
+const addBody = bodyOfFunction(operationCode, "add");
+const subtractBody = bodyOfFunction(operationCode, "subtract");
+const multiplyBody = bodyOfFunction(operationCode, "multiply");
+const divideBody = bodyOfFunction(operationCode, "divide");
 
-function anyOf(has, res) {
-  return res.some((r) => has(r));
-}
+const parseNumbersBody = bodyOfFunction(parser, "parseNumbers");
+const isValidOperationBody = bodyOfFunction(parser, "isValidOperation");
 
 /* -----------------------------
    Grade TODOs
 -------------------------------- */
 
 /**
- * TODO 1 — Required structure
+ * TODO 1 — Required utils structure only
+ * calculator.js is NOT part of creation grading.
  */
 {
   const required = [
-    {
-      label: "calculator.js exists in the project root",
-      ok: existsFile(calculatorFile),
-    },
     {
       label: "utils folder exists in the project root",
       ok: existsDir(utilsDir),
@@ -367,28 +414,24 @@ function anyOf(has, res) {
   if (!calculator) {
     failTask(tasks[1], "calculator.js not found / unreadable.");
   } else {
-    const has = mkHas(calculator);
-
     const required = [
       {
         label: "Imports operation functions from ./utils/operation(s).js",
-        ok: anyOf(has, [
+        ok: hasAny(calculator, [
           /import\s*\{\s*[^}]*\badd\b[^}]*\bsubtract\b[^}]*\bmultiply\b[^}]*\bdivide\b[^}]*\}\s*from\s*['"]\.\/utils\/operations?\.js['"]/i,
           /import\s*\{\s*[^}]*\}\s*from\s*['"]\.\/utils\/operations?\.js['"]/i,
         ]),
       },
       {
         label: "Imports parser functions from ./utils/parser.js",
-        ok: anyOf(has, [
+        ok: hasAny(calculator, [
           /import\s*\{\s*[^}]*\bparseNumbers\b[^}]*\bisValidOperation\b[^}]*\}\s*from\s*['"]\.\/utils\/parser\.js['"]/i,
           /import\s*\{\s*[^}]*\}\s*from\s*['"]\.\/utils\/parser\.js['"]/i,
         ]),
       },
       {
         label: 'Imports lodash using: import _ from "lodash"',
-        ok: anyOf(has, [
-          /import\s+_\s+from\s+['"]lodash['"]/i,
-        ]),
+        ok: /import\s+_\s+from\s+['"]lodash['"]/i.test(calculator),
       },
     ];
 
@@ -403,21 +446,18 @@ function anyOf(has, res) {
   if (!calculator) {
     failTask(tasks[2], "calculator.js not found / unreadable.");
   } else {
-    const has = mkHas(calculator);
-
     const required = [
       {
-        label: "Reads operation from process.argv",
-        ok: anyOf(has, [
+        label: "Reads operation from process.argv[2]",
+        ok: hasAny(calculator, [
           /const\s+\w+\s*=\s*process\.argv\s*\[\s*2\s*\]/i,
           /let\s+\w+\s*=\s*process\.argv\s*\[\s*2\s*\]/i,
+          /var\s+\w+\s*=\s*process\.argv\s*\[\s*2\s*\]/i,
         ]),
       },
       {
         label: "Reads numbers from process.argv.slice(3)",
-        ok: anyOf(has, [
-          /process\.argv\.slice\s*\(\s*3\s*\)/i,
-        ]),
+        ok: /process\.argv\.slice\s*\(\s*3\s*\)/i.test(calculator),
       },
     ];
 
@@ -426,42 +466,51 @@ function anyOf(has, res) {
 }
 
 /**
- * TODO 4 — Validate and calculate
+ * TODO 4 — Validate input and calculate
  */
 {
   if (!calculator) {
     failTask(tasks[3], "calculator.js not found / unreadable.");
   } else {
-    const has = mkHas(calculator);
-
     const required = [
       {
         label: "Checks operation validity using isValidOperation(...)",
-        ok: anyOf(has, [
+        ok: hasAny(calculator, [
           /isValidOperation\s*\(\s*\w+\s*\)/i,
           /!\s*isValidOperation\s*\(\s*\w+\s*\)/i,
         ]),
       },
       {
         label: "Parses numbers using parseNumbers(...)",
-        ok: anyOf(has, [
-          /parseNumbers\s*\(\s*\w+\s*\)/i,
+        ok: /parseNumbers\s*\(\s*\w+\s*\)/i.test(calculator),
+      },
+      {
+        label: "Uses conditional logic (switch or if/else) to choose the operation",
+        ok: hasAny(calculator, [
+          /switch\s*\(\s*\w+\s*\)/i,
+          /if\s*\(\s*.*operation/i,
+          /if\s*\(\s*\w+\s*===\s*['"](add|subtract|multiply|divide)['"]/i,
         ]),
       },
       {
-        label: "Calls one or more operation functions (add/subtract/multiply/divide)",
-        ok: anyOf(has, [
-          /\badd\s*\(\s*\w+\s*\)/i,
-          /\bsubtract\s*\(\s*\w+\s*\)/i,
-          /\bmultiply\s*\(\s*\w+\s*\)/i,
-          /\bdivide\s*\(\s*\w+\s*\)/i,
-        ]),
+        label: "Calls add(...) in calculator.js",
+        ok: /\badd\s*\(\s*\w+\s*\)/i.test(calculator),
       },
       {
-        label: "Displays the result or invalid-operation message using console.log(...)",
-        ok: anyOf(has, [
-          /console\.log\s*\(/i,
-        ]),
+        label: "Calls subtract(...) in calculator.js",
+        ok: /\bsubtract\s*\(\s*\w+\s*\)/i.test(calculator),
+      },
+      {
+        label: "Calls multiply(...) in calculator.js",
+        ok: /\bmultiply\s*\(\s*\w+\s*\)/i.test(calculator),
+      },
+      {
+        label: "Calls divide(...) in calculator.js",
+        ok: /\bdivide\s*\(\s*\w+\s*\)/i.test(calculator),
+      },
+      {
+        label: "Displays output using console.log(...)",
+        ok: /console\.log\s*\(/i.test(calculator),
       },
     ];
 
@@ -470,38 +519,49 @@ function anyOf(has, res) {
 }
 
 /**
- * TODO 5 — add + subtract in operation(s).js
+ * TODO 5 — add + subtract implementation
  */
 {
   if (!operationCode) {
     failTask(tasks[4], "utils/operation.js or utils/operations.js not found / unreadable.");
   } else {
-    const has = mkHas(operationCode);
-
     const required = [
       {
         label: "Exports add(numbers)",
-        ok: anyOf(has, [
+        ok: hasAny(operationCode, [
           /export\s+function\s+add\s*\(\s*numbers\s*\)/i,
+          /export\s+const\s+add\s*=\s*\(\s*numbers\s*\)\s*=>/i,
         ]),
       },
       {
         label: "Exports subtract(numbers)",
-        ok: anyOf(has, [
+        ok: hasAny(operationCode, [
           /export\s+function\s+subtract\s*\(\s*numbers\s*\)/i,
+          /export\s+const\s+subtract\s*=\s*\(\s*numbers\s*\)\s*=>/i,
         ]),
       },
       {
-        label: "add(numbers) returns something other than empty placeholder",
-        ok: anyOf(has, [
-          /export\s+function\s+add\s*\(\s*numbers\s*\)\s*\{[\s\S]*?return\s+(?!\{\s*\})[\s\S]*?\}/i,
-        ]),
+        label: "add(numbers) implements addition logic",
+        ok: !!addBody && (
+          hasAny(addBody, [
+            /reduce\s*\([\s\S]*?\+/i,
+            /\+=/i,
+            /sum\s*\+\s*\w+/i,
+          ]) &&
+          /return\s+/i.test(addBody)
+        ),
       },
       {
-        label: "subtract(numbers) returns something other than empty placeholder",
-        ok: anyOf(has, [
-          /export\s+function\s+subtract\s*\(\s*numbers\s*\)\s*\{[\s\S]*?return\s+(?!\{\s*\})[\s\S]*?\}/i,
-        ]),
+        label: "subtract(numbers) implements subtraction logic",
+        ok: !!subtractBody && (
+          hasAny(subtractBody, [
+            /slice\s*\(\s*1\s*\)[\s\S]*?reduce\s*\(/i,
+            /reduce\s*\(/i,
+            /-=/i,
+            /-\s*\w+/i,
+          ]) &&
+          /return\s+/i.test(subtractBody)
+        ),
       },
     ];
 
@@ -510,38 +570,49 @@ function anyOf(has, res) {
 }
 
 /**
- * TODO 6 — multiply + divide in operation(s).js
+ * TODO 6 — multiply + divide implementation
  */
 {
   if (!operationCode) {
     failTask(tasks[5], "utils/operation.js or utils/operations.js not found / unreadable.");
   } else {
-    const has = mkHas(operationCode);
-
     const required = [
       {
         label: "Exports multiply(numbers)",
-        ok: anyOf(has, [
+        ok: hasAny(operationCode, [
           /export\s+function\s+multiply\s*\(\s*numbers\s*\)/i,
+          /export\s+const\s+multiply\s*=\s*\(\s*numbers\s*\)\s*=>/i,
         ]),
       },
       {
         label: "Exports divide(numbers)",
-        ok: anyOf(has, [
+        ok: hasAny(operationCode, [
           /export\s+function\s+divide\s*\(\s*numbers\s*\)/i,
+          /export\s+const\s+divide\s*=\s*\(\s*numbers\s*\)\s*=>/i,
         ]),
       },
       {
-        label: "multiply(numbers) returns something other than empty placeholder",
-        ok: anyOf(has, [
-          /export\s+function\s+multiply\s*\(\s*numbers\s*\)\s*\{[\s\S]*?return\s+(?!\{\s*\})[\s\S]*?\}/i,
-        ]),
+        label: "multiply(numbers) implements multiplication logic",
+        ok: !!multiplyBody && (
+          hasAny(multiplyBody, [
+            /reduce\s*\([\s\S]*?\*/i,
+            /\*=/i,
+            /\*\s*\w+/i,
+          ]) &&
+          /return\s+/i.test(multiplyBody)
+        ),
       },
       {
-        label: "divide(numbers) returns something other than empty placeholder",
-        ok: anyOf(has, [
-          /export\s+function\s+divide\s*\(\s*numbers\s*\)\s*\{[\s\S]*?return\s+(?!\{\s*\})[\s\S]*?\}/i,
-        ]),
+        label: "divide(numbers) implements division logic",
+        ok: !!divideBody && (
+          hasAny(divideBody, [
+            /slice\s*\(\s*1\s*\)[\s\S]*?reduce\s*\(/i,
+            /reduce\s*\(/i,
+            /\/=/i,
+            /\/\s*\w+/i,
+          ]) &&
+          /return\s+/i.test(divideBody)
+        ),
       },
     ];
 
@@ -550,39 +621,39 @@ function anyOf(has, res) {
 }
 
 /**
- * TODO 7 — parser lodash + parseNumbers
+ * TODO 7 — parseNumbers implementation using lodash
  */
 {
   if (!parser) {
     failTask(tasks[6], "utils/parser.js not found / unreadable.");
   } else {
-    const has = mkHas(parser);
-
     const required = [
       {
         label: 'Imports lodash using: import _ from "lodash"',
-        ok: anyOf(has, [
-          /import\s+_\s+from\s+['"]lodash['"]/i,
-        ]),
+        ok: /import\s+_\s+from\s+['"]lodash['"]/i.test(parser),
       },
       {
         label: "Exports parseNumbers(input)",
-        ok: anyOf(has, [
+        ok: hasAny(parser, [
           /export\s+function\s+parseNumbers\s*\(\s*input\s*\)/i,
+          /export\s+const\s+parseNumbers\s*=\s*\(\s*input\s*\)\s*=>/i,
         ]),
       },
       {
-        label: "parseNumbers(...) returns something other than empty placeholder",
-        ok: anyOf(has, [
-          /export\s+function\s+parseNumbers\s*\(\s*input\s*\)\s*\{[\s\S]*?return\s+(?!\{\s*\})[\s\S]*?\}/i,
+        label: "parseNumbers uses _.map(...)",
+        ok: !!parseNumbersBody && /_\.\s*map\s*\(/i.test(parseNumbersBody),
+      },
+      {
+        label: "parseNumbers converts strings to numbers",
+        ok: !!parseNumbersBody && hasAny(parseNumbersBody, [
+          /Number\s*\(/i,
+          /parseFloat\s*\(/i,
+          /parseInt\s*\(/i,
         ]),
       },
       {
-        label: "Uses lodash helper(s) inside parseNumbers (for example _.map or _.compact)",
-        ok: anyOf(has, [
-          /parseNumbers\s*\(\s*input\s*\)[\s\S]*?_\.\s*map\s*\(/i,
-          /parseNumbers\s*\(\s*input\s*\)[\s\S]*?_\.\s*compact\s*\(/i,
-        ]),
+        label: "parseNumbers uses _.compact(...) and returns the parsed values",
+        ok: !!parseNumbersBody && /_\.\s*compact\s*\(/i.test(parseNumbersBody) && /return\s+/i.test(parseNumbersBody),
       },
     ];
 
@@ -591,33 +662,39 @@ function anyOf(has, res) {
 }
 
 /**
- * TODO 8 — isValidOperation
+ * TODO 8 — isValidOperation implementation using lodash
  */
 {
   if (!parser) {
     failTask(tasks[7], "utils/parser.js not found / unreadable.");
   } else {
-    const has = mkHas(parser);
-
     const required = [
       {
         label: "Exports isValidOperation(operation)",
-        ok: anyOf(has, [
+        ok: hasAny(parser, [
           /export\s+function\s+isValidOperation\s*\(\s*operation\s*\)/i,
+          /export\s+const\s+isValidOperation\s*=\s*\(\s*operation\s*\)\s*=>/i,
         ]),
       },
       {
-        label: "isValidOperation(...) returns something other than empty placeholder",
-        ok: anyOf(has, [
-          /export\s+function\s+isValidOperation\s*\(\s*operation\s*\)\s*\{[\s\S]*?return\s+(?!\{\s*\})[\s\S]*?\}/i,
+        label: "Defines valid operations including add, subtract, multiply, divide",
+        ok: !!isValidOperationBody && hasAll(isValidOperationBody, [
+          /add/i,
+          /subtract/i,
+          /multiply/i,
+          /divide/i,
         ]),
       },
       {
-        label: "Uses lodash _.includes(...) or equivalent valid-operation membership check",
-        ok: anyOf(has, [
+        label: "Uses lodash _.includes(...) or equivalent membership check",
+        ok: !!isValidOperationBody && hasAny(isValidOperationBody, [
           /_\.\s*includes\s*\(/i,
-          /\[\s*['"]add['"][\s\S]*['"]subtract['"][\s\S]*['"]multiply['"][\s\S]*['"]divide['"]\s*\]/i,
+          /\.includes\s*\(\s*operation\s*\)/i,
         ]),
+      },
+      {
+        label: "Returns the validation result",
+        ok: !!isValidOperationBody && /return\s+/i.test(isValidOperationBody),
       },
     ];
 
@@ -747,10 +824,11 @@ feedback += `
 ## How marks were deducted (rules)
 
 - JS comments are ignored (so starter TODO comments do NOT count).
-- Checks are intentionally light and only verify top-level structure and key constructs.
+- Checks are intentionally lenient, but now include top-level implementation logic in addition to existence checks.
 - Code can be in ANY order; repeated code is allowed.
-- Common equivalents are accepted, and variable naming is flexible where possible.
-- Folder creation and required file creation are included in the grading.
+- Common equivalents are accepted, and naming is flexible where possible.
+- calculator.js is graded for implementation, but NOT for file creation.
+- Folder/file creation grading only applies to utils/, parser.js, and operation.js / operations.js.
 - lodash installation and manual testing commands are NOT graded.
 - Either \`utils/operation.js\` or \`utils/operations.js\` is accepted.
 - Missing required items reduce marks proportionally within that TODO.
