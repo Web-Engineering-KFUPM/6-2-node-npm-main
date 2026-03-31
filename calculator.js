@@ -49,16 +49,12 @@ LAB CREATION INSTRUCTIONS
 LAB SETUP INSTRUCTIONS
 ===================================================================
 
-1. Navigate to the project root folder (if you are not in root directory):
-   Open your terminal and run:
-      cd 6-2-node-npm
-
-2. Initialize npm project (if not already done):
+1. Initialize npm project (if not already done):
    Run:
       npm init -y
    This creates a package.json file that manages your project dependencies.
 
-3. Install project dependencies:
+2. Install project dependencies:
    Run:
       npm install lodash
    This installs the lodash package, which provides useful utility functions.
@@ -216,38 +212,4 @@ After completing all TODOs, test your calculator:
   Expected output: Invalid operation. Use: add, subtract, multiply, or divide
 
 */
-import { add, subtract, multiply, divide } from "./utils/operations.js";
-import { parseNumbers, isValidOperation } from "./utils/parser.js";
-import _ from "lodash";
 
-const operation = process.argv[2];
-const numbers = process.argv.slice(3);
-
-if (!isValidOperation(operation)) {
-  console.log("Invalid operation. Use: add, subtract, multiply, or divide");
-  process.exit(0);
-}
-
-const nums = parseNumbers(numbers);
-
-let result;
-
-switch (operation) {
-  case "add":
-    result = add(nums);
-    break;
-  case "subtract":
-    result = subtract(nums);
-    break;
-  case "multiply":
-    result = multiply(nums);
-    break;
-  case "divide":
-    result = divide(nums);
-    break;
-  default:
-    console.log("Invalid operation. Use: add, subtract, multiply, or divide");
-    process.exit(0);
-}
-
-console.log(`Result: ${result}`);
