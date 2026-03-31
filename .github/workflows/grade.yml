@@ -19,7 +19,7 @@ jobs:
           node-version: "20"
 
       - name: Run autograder
-        run: scripts/grade.cjs
+        run: node scripts/grade.cjs
 
       - name: Upload grading artifacts
         uses: actions/upload-artifact@v4
