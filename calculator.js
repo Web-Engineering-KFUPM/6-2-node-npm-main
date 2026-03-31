@@ -4,6 +4,48 @@ Node.js & npm Lab — CLI Calculator
 ===================================================================
 
 ===================================================================
+LAB CREATION INSTRUCTIONS
+===================================================================
+
+1. Create a folder name it as utils.
+2. Inside the utils folder create an operation.js file and parser.js.
+3. In the oerpation.js file create the following functions:
+
+    - Note: you will write the code inside the return statement's curly braces.
+
+    export function add(numbers) {
+    return {}
+    }
+    export function subtract(numbers) {
+      return {}
+    }
+
+    export function multiply(numbers) {
+      return {}
+    }
+
+    export function divide(numbers) {
+      return {}
+    }
+
+4. Inside the parser.js file 
+    4.1 import lodsh library:
+
+          import _ from "lodash"
+
+    - Note: you will write the code inside the return statement's curly braces.
+
+    4.2 create the following functions inside the paarser.js file:
+
+        export function parseNumbers(input) {
+            return {}
+          }
+
+          export function isValidOperation(operation) {
+            return {}
+          }
+
+===================================================================
 LAB SETUP INSTRUCTIONS
 ===================================================================
 

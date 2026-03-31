@@ -2,8 +2,6 @@
 
 > **Note:**
 > Please follow the `calculator.js` file to implement the TODOs.
->
-> Please use app.jsx file to perform TODOs and follow the steps strictly to gain good marks in the assignment.  
 >  
 > **Due Date:** 1 April, 2026, **20:59 PM**
 
